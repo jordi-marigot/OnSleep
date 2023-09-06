@@ -15,8 +15,6 @@ const createWindow = () => {
   // Ocultar el menú predeterminado
   window.setMenu(null);
 
-  // Opcionalmente, puedes habilitar DevTools si es necesario
-  // window.webContents.openDevTools();
 };
 
 app.whenReady().then(() => {
