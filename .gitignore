@@ -1,0 +1,84 @@
+# Dependencias y módulos Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Carpeta de construcción de Electron
+dist/
+
+# Archivos de configuración de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de registro y archivos generados
+*.log
+*.log.*
+logs/
+*.sqlite
+*.swp
+
+# Archivos de configuración locales
+.env
+
+# Archivo de bloqueo de versión
+yarn.lock
+
+# Carpeta de caché
+.cache/
+
+# Carpeta de respaldo de archivos
+backup*/
+
+# Archivo de respaldo de configuración
+*.bak
+
+# Directorio de pruebas y resultados de pruebas
+test/
+
+# Dependencias de desarrollo
+devDependencies/
+
+# Archivos de construcción específicos para sistemas operativos (ejemplo: .exe, .dmg)
+*.exe
+*.dmg
+*.app
+
+# Carpeta de almacenamiento local de Visual Studio Code
+.vscode/
+
+# Carpeta de almacenamiento de WebStorm
+.idea/
+
+# Carpeta de almacenamiento local de Sublime Text
+.sublime-workspace
+.sublime-project
+
+# Carpetas de almacenamiento local de editorconfig
+.editorconfig
+
+# Carpetas de almacenamiento local de TypeScript
+.tsbuildinfo
+
+# Carpetas de almacenamiento local de ESLint
+.eslintcache
+
+# Carpetas de almacenamiento local de Jest
+.jest/
+
+# Carpeta de almacenamiento local de Node Inspector
+.node-inspector/
+
+# Carpetas de almacenamiento local de TSLint
+.tslint/
+
+# Carpetas de almacenamiento local de Vercel
+.vercel/
+
+# Archivo de acceso (específico de Windows)
+Desktop.ini
+
+# Archivo de caché (específico de Windows)
+ehthumbs.db
+
+# Carpeta de archivos temporales (específica de Windows)
+$RECYCLE.BIN/
