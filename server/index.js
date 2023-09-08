@@ -233,6 +233,7 @@ app.post('/add-time', async (req, res) => {
     console.error('Error al agregar tiempo:', error.message);
     res.sendStatus(500);
   }
+
 });
 
 app.listen(port, () => {

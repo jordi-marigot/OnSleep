@@ -55,17 +55,38 @@ axios
     console.error('Error al enviar la IP privada al servidor Linux:', error);
   });
 
-// Envía señales de vida periódicamente al servidor
-setInterval(() => {
-  axios
-    .post(`${serverUrl}/heartbeat`)
-    .then((response) => {
-      console.log('Señal de vida enviada al servidor Linux');
-    })
-    .catch((error) => {
-      console.error('Error al enviar la señal de vida:', error);
-    });
-}, 60000);
+// Define la variable jsonData en un ámbito superior
+// Define la variable jsonData en un ámbito superior
+let jsonData;
+
+// Define la variable jsonFileName en un ámbito superior
+let jsonFileName;
+
+// Función para obtener el JSON del servidor y mostrarlo
+async function obtenerYMostrarJSON() {
+  try {
+    // Obtén el nombre del archivo JSON
+    jsonFileName = getJsonFileName();
+
+    // Verifica si el nombre del archivo es válido
+    if (!jsonFileName) {
+      console.error('Nombre de archivo JSON no válido.');
+      return;
+    }
+
+    // Realiza una solicitud al servidor para obtener el JSON
+    const response = await axios.get(`${serverUrl}/days-data/${jsonFileName}`);
+    jsonData = response.data; // Asigna el JSON a la variable jsonData
+
+    console.log("JSON recibido del servidor:", jsonData);
+  } catch (error) {
+    console.error("Error al obtener el JSON:", error);
+  }
+}
+
+// Llama a la función inicialmente y luego cada 1 minuto (60,000 milisegundos)
+obtenerYMostrarJSON(); // Llamada inicial
+setInterval(obtenerYMostrarJSON, 60000); // Llamada cada 1 minuto
 
 // Función para generar el nombre del archivo JSON basado en la fecha actual
 function getJsonFileName() {
@@ -80,32 +101,24 @@ function getJsonFileName() {
 // Registra un manejador para 'getJsonFromServer'
 ipcMain.handle('getJsonFromServer', async (event, jsonFileName) => {
   try {
-    // Obtén el nombre del archivo JSON
-    const jsonFileName = getJsonFileName();
-
-    // Verifica si el nombre del archivo es válido
-    if (!jsonFileName) {
-      console.error('Nombre de archivo JSON no válido.');
+    // Verifica si la variable jsonData tiene datos válidos antes de procesarla
+    if (!jsonData) {
+      console.error('JSON no disponible.');
       return;
     }
-
-    console.log("Solicitando JSON al servidor...");
-
-    // Realiza una solicitud al servidor para obtener el JSON
-    const response = await axios.get(`${serverUrl}/days-data/${jsonFileName}`);
-    const jsonData = response.data; // Aquí obtenemos el JSON real desde la respuesta del servidor
-
-    console.log("JSON recibido del servidor:", jsonData);
 
     // Procesa los datos recibidos
     const { initialTimeH, initialTimeM, finalTimeH, finalTimeM, extraTime } = jsonData;
 
-    return [initialTimeH, initialTimeM, finalTimeH, finalTimeM, extraTime];
+    // Devuelve los datos al proceso de renderizado
+    return { initialTimeH, initialTimeM, finalTimeH, finalTimeM, extraTime };
   } catch (error) {
     console.error('Error al obtener el JSON del servidor:', error);
     throw error;
   }
 });
+
+
 
 // Inicia la aplicación y crea la ventana principal cuando esté lista
 app.whenReady().then(createWindow);
