@@ -36,17 +36,19 @@ function runCountdown(h, m, s){
                 var remainingSeconds = clock.getTime();
                 var root = document.documentElement;
                 var color;
-                console.log(remainingSeconds)
 
                 if (remainingSeconds > 0) {
-                    if (remainingSeconds <= 1800 && remainingSeconds > 1200) {
+                    if (remainingSeconds <= 1800 && remainingSeconds > 600) {
                         if(remainingSeconds == 1800){alertNotification(30)}
                         color = '#ffcb00';
-                    } else if (remainingSeconds <= 1200 && remainingSeconds > 600) {
-                        if(remainingSeconds == 1200){alertNotification(20)}
-                        color = '#ff7100';
-                    } else if (remainingSeconds <= 600) {
+                    } else if (remainingSeconds <= 600 && remainingSeconds > 300) {
                         if(remainingSeconds == 600){alertNotification(10)}
+                        color = '#ffa500';
+                    } else if (remainingSeconds <= 300 && remainingSeconds > 60) {
+                        if(remainingSeconds == 300){alertNotification(5)}
+                        color = '#ff4500 ';
+                    } else if (remainingSeconds <= 60) {
+                        if(remainingSeconds == 60){alertNotification(1)}
                         color = '#f00';
                     }
                     
