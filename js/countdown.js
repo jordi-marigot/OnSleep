@@ -19,7 +19,7 @@ function runCountdown(h, m, s){
         autoStart: true,
         callbacks: {
             interval: function(){
-            if (clock.getTime() == 0){
+            /*if (clock.getTime() == 0){
                 if (pos == "session"){
                 clock.setTime(countB*60); // Restablece el tiempo a la duración de la pausa
                 clock.start();
@@ -31,7 +31,7 @@ function runCountdown(h, m, s){
                 pos = "session";
                 $("#stats").html(pos);
                 }
-            }
+            }*/
                 // Obtén el tiempo restante en segundos
                 var remainingSeconds = clock.getTime();
                 var root = document.documentElement;
@@ -53,6 +53,9 @@ function runCountdown(h, m, s){
                     }
                     
                     root.style.setProperty('--change-color', color);
+                  }
+                  else if (remainingSeconds <= 0){
+                    confirmShutdown();
                   }
             },
         },        
