@@ -1,22 +1,30 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const os = require('os');
 const axios = require('axios');
+const path = require('path');
 
 let mainWindow;
 
-app.on('ready', () => {
-  // Create the main window
+function createWindow() {
+  // Crear ventana principal y cargar archivo HTML
+
+  const preloadPath = path.join(__dirname, '\\js\\preload.js');
+  const htmlPath = path.join(__dirname, '\\js\\index.html');
+
+
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    resizable: false,
     webPreferences: {
+      preload: preloadPath,
+      contextIsolation: false, // Deshabilitar el aislamiento de contexto para poder acceder a require
       nodeIntegration: true,
     },
   });
 
-  // Load your HTML file or URL
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile(htmlPath);
+}
+
 
   // Obtener la IP privada de la computadora
   const networkInterfaces = os.networkInterfaces();
@@ -56,4 +64,5 @@ app.on('ready', () => {
         console.error('Error al enviar la señal de vida:', error);
       });
   }, 60000); // 1 minuto en milisegundos.
-});
+
+app.whenReady().then(createWindow);

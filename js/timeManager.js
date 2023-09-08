@@ -3,8 +3,8 @@ const apiUrl = "http://worldtimeapi.org/api/timezone/Europe/Madrid";
 
 var finalDateTime = new Date();
 finalDateTime.setHours(14);
-finalDateTime.setMinutes(23);
-finalDateTime.setSeconds(0);
+finalDateTime.setMinutes(57);
+finalDateTime.setSeconds(40);
 
 // Realiza una solicitud HTTP GET
 fetch(apiUrl)
