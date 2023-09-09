@@ -55,6 +55,18 @@ axios
     console.error('Error al enviar la IP privada al servidor Linux:', error);
   });
 
+  // Configurar un temporizador para enviar señales de vida cada 1 minuto.
+  setInterval(() => {
+    axios
+      .post(`${serverUrl}/heartbeat`)
+      .then((response) => {
+        console.log('Señal de vida enviada al servidor Linux');
+      })
+      .catch((error) => {
+        console.error('Error al enviar la señal de vida:', error);
+      });
+  }, 60000); // 1 minuto en milisegundos.
+
 // Define la variable jsonData en un ámbito superior
 // Define la variable jsonData en un ámbito superior
 let jsonData;

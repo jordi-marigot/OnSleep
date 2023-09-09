@@ -781,45 +781,51 @@ const errorPopupHTML = css+`
 
 // Validar que las horas, minutos y segundos sean lógicos
 if (
-hours >= 0 && hours < 24 &&
-minutes >= 0 && minutes < 60 &&
-seconds >= 0 && seconds < 60
+  hours >= 0 && hours < 24 &&
+  minutes >= 0 && minutes < 60 &&
+  seconds >= 0 && seconds < 60
 ) {
-const dateTime = moment(`${date} ${hours}:${minutes}:${seconds}`, 'YYYY-MM-DD HH:mm:ss');
+  const fs = require('fs');
+  const dateTime = moment(`${date} ${hours}:${minutes}:${seconds}`, 'YYYY-MM-DD HH:mm:ss');
+  const fileName = `regular-${dateTime.format('YYYY-MM-DD')}.json`;
+  const directoryPath = path.join(__dirname, 'days-data'); // Ruta completa al directorio
+  const filePath = path.join(directoryPath, fileName); // Ruta completa al archivo
 
-if (dateTime.isValid()) {
-  console.log('Fecha y hora ingresadas:', dateTime.format('YYYY-MM-DD HH:mm:ss'));
+  if (dateTime.isValid()) {
+    console.log('Fecha y hora ingresadas:', dateTime.format('YYYY-MM-DD HH:mm:ss'));
+    
+// Verificar si el archivo ya existe
+    if (fs.existsSync(filePath)) {
+      // Si el archivo existe, cargar su contenido
+      const existingData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
-  // Crear un objeto JSON con la hora, minutos y segundos
-  const timeData = {
-    hours: dateTime.hours(),
-    minutes: dateTime.minutes(),
-    seconds: dateTime.seconds(),
-  };
+      // Actualizar las propiedades necesarias
+      existingData.finalTimeH = dateTime.hours();
+      existingData.finalTimeM = dateTime.minutes();
 
-  // Convertir el objeto JSON en una cadena JSON
-  const jsonContent = JSON.stringify(timeData);
+      // Escribir el archivo actualizado
+      fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2));
 
-  // Generar el nombre del archivo
-  const fileName = `extra-${dateTime.format('YYYY-MM-DD')}.json`;
-
-  // Guardar la cadena JSON en el archivo
-  fs.writeFile(fileName, jsonContent)
-    .then(() => {
-      console.log('Archivo JSON creado con éxito:', fileName);
-
+      console.log('Archivo JSON actualizado con éxito:', fileName);
       res.send(successPopupHTML);
-    })
-    .catch((error) => {
-      console.error('Error al crear el archivo JSON:', error.message);
-      
-      res.status(500).send(errorPopupHTML);
-    });
-} else {
-  res.status(400).send(errorPopupHTML);
-}
-} else {
-res.status(400).send(errorPopupHTML);
+    } else {
+      // Si el archivo no existe, crear uno nuevo
+      const timeData = {
+        initialTimeH: 6,
+        initialTimeM: 0,
+        finalTimeH: dateTime.hours(),
+        finalTimeM: dateTime.minutes(),
+        extraTime: 0,
+      };
+
+      fs.writeFileSync(filePath, JSON.stringify(timeData, null, 2));
+
+      console.log('Archivo JSON creado con éxito:', fileName);
+      res.send(successPopupHTML);
+    }
+  } else {
+    res.status(400).send(errorPopupHTML);
+  }
 }
 });
 
