@@ -26,7 +26,7 @@ function alertNotification(time) {
     }
 }
 
-  // Esta función muestra un diálogo de confirmación antes de apagar el sistema
+  // Esta función muestra un diálogo 5 segundos antes de apagar el sistema
   function confirmShutdown() {
     const NOTIFICATION_TITLE = 'ALERT ONSLEEP';
     const NOTIFICATION_BODY = 'THE PC WILL CLOSE !';
