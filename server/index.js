@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs').promises;
 const axios = require('axios');
 const moment = require('moment-timezone');
+const ping = require('ping'); // Importa el módulo ping
 const app = express();
 const port = 2222;
 const path = require('path'); // Importa la librería path
@@ -20,10 +21,64 @@ let clientIpAddress = '';
 let currentLogFile = '';
 let dropdownOptions = []; // Variable global para almacenar las opciones del menú desplegable
 
+// Función para guardar la IP en un archivo JSON
+async function guardarIP(ipAddress) {
+  try {
+    const data = { ipAddress };
+    await fs.writeFile('ipAddress.json', JSON.stringify(data));
+    console.log('IP guardada con éxito:', ipAddress);
+  } catch (error) {
+    console.error('Error al guardar la IP:', error.message);
+  }
+}
+
+// Función para obtener la IP guardada desde el archivo JSON
+async function obtenerIPGuardada() {
+  try {
+    const data = await fs.readFile('ipAddress.json', 'utf-8');
+    const parsedData = JSON.parse(data);
+    if (parsedData.ipAddress) {
+      return parsedData.ipAddress;
+    }
+  } catch (error) {
+    console.error('Error al obtener la IP guardada:', error.message);
+  }
+  return null;
+}
+
+async function logRegister(stringMessage){
+  const currentTimeOnline = await getOnlineTime();
+  console.log('Señal de vida recibida del cliente en', currentTimeOnline);
+  const currentDate = moment().tz('Europe/Madrid').format('YYYY-MM-DD');
+  const alertString = `${stringMessage}`;
+
+  if (currentDate !== currentLogFile) {
+    currentLogFile = currentDate;
+  }
+
+  const logFileName = `${alertString}${currentLogFile}.log`;
+
+  const formattedTime = moment(currentTimeOnline)
+    .tz('Europe/Madrid')
+    .format('YYYY-MM-DD | HH:mm:ss');
+
+  try {
+    await prependToFile(logFileName, formattedTime + '\n');
+  } catch (error) {
+    console.error('Error al escribir en el archivo:', error.message);
+  }
+}
+
+app.get('/get-ip', (req, res) => {
+  const savedIpAddress = obtenerIPGuardada();
+  res.json({ ipAddress: savedIpAddress });
+});
+
 app.post('/set-ip', (req, res) => {
   const { ipAddress } = req.body;
   clientIpAddress = ipAddress;
   console.log('IP privada recibida del cliente:', clientIpAddress);
+  guardarIP(clientIpAddress);
   res.sendStatus(200);
 });
 
@@ -42,9 +97,16 @@ async function getOnlineTime() {
 
 async function prependToFile(fileName, data) {
   try {
-    const currentContent = await readFile(fileName); // Llamar a readFile de manera asincrónica con await
+    const filePath = path.join(__dirname, 'logs', fileName);
+    let currentContent = '';
+
+    try {
+      currentContent = await fs.readFile(filePath, 'utf-8');
+    } catch (error) {
+    }
+
     const newContent = data + currentContent;
-    await writeFile(fileName, newContent);
+    await fs.writeFile(filePath, newContent, { flag: 'w' }); // Usamos { flag: 'w' } para crear o sobrescribir el archivo
     console.log('Entrada agregada al principio del archivo:', data);
   } catch (error) {
     console.error('Error al agregar entrada al archivo:', error.message);
@@ -69,7 +131,7 @@ async function writeFile(fileName, data) {
 }
 
 async function getLogFilesList() {
-  const directory = __dirname;
+  const directory = __dirname+"/logs/";
   const files = await fs.readdir(directory);
   const logFiles = files.filter((file) => file.endsWith('.log'));
   return logFiles;
@@ -105,25 +167,7 @@ async function generateDailyJson() {
 generateDailyJson();
 
 app.post('/heartbeat', async (req, res) => {
-  const currentTimeOnline = await getOnlineTime();
-  console.log('Señal de vida recibida del cliente en', currentTimeOnline);
-  const currentDate = moment().tz('Europe/Madrid').format('YYYY-MM-DD');
-
-  if (currentDate !== currentLogFile) {
-    currentLogFile = currentDate;
-  }
-
-  const logFileName = `${currentLogFile}.log`;
-
-  const formattedTime = moment(currentTimeOnline)
-    .tz('Europe/Madrid')
-    .format('YYYY-MM-DD | HH:mm:ss');
-
-  try {
-    await prependToFile(logFileName, formattedTime + '\n');
-  } catch (error) {
-    console.error('Error al escribir en el archivo:', error.message);
-  }
+  logRegister("regular-");
 
   res.sendStatus(200);
 });
@@ -173,27 +217,76 @@ app.get('/logs', async (req, res) => {
     res.send(mainPage);
     });
 
-    app.get('/logs/:logFileName', async (req, res) => {
-    const { logFileName } = req.params;
-    const logFilePath = `${__dirname}/${logFileName}`;
-
-    try {
-        const logContent = await readFile(logFilePath);
-        res.send(`
-        <html>
-            <head>
-            <title>Registro ${logFileName}</title>
-            </head>
-            <body>
-            <h1>Registro ${logFileName}</h1>
-            <pre>${logContent}</pre>
-            </body>
-        </html>
-        `);
-    } catch (error) {
-        res.status(404).send('Archivo de registro no encontrado.');
+// Función para realizar el ping y verificar la respuesta
+function pingClient() {
+  ping.sys.probe(clientIpAddress, (isAlive) => {
+    if (isAlive) {
+      console.log('La aplicación del cliente se ha cerrado, pero el PC sigue funcionando.');
+      logRegister("alert-")
+    } else {
+      console.log('El cliente no está activo.');
     }
-    });
+  });
+}
+
+/*const pingInterval = 2 * 60 * 1000; // 2 minutos en milisegundos
+let lastPingTime = Date.now();
+
+// Establecer un intervalo para realizar el ping
+setInterval(() => {
+  const currentTime = Date.now();
+  const elapsedTime = currentTime - lastPingTime;
+
+  if (elapsedTime >= pingInterval) {
+    pingClient();
+    lastPingTime = currentTime;
+  }
+}, 10000); // Verificar cada 10 segundos*/
+
+
+app.get('/logs/:logFileName', async (req, res) => {
+  const { logFileName } = req.params;
+  const logFilePathRegular = `${__dirname}/logs/${logFileName}`;
+  let logFilePathAlert = `${__dirname}/logs/alert-${logFileName}`;
+  logFilePathAlert = logFilePathRegular.replace('regular-', 'alert-');
+  
+  try {
+    const logContentRegular = await fs.readFile(logFilePathRegular, 'utf-8');
+    const logContentAlert = await fs.readFile(logFilePathAlert, 'utf-8');
+    
+    res.send(`
+      <html>
+        <head>
+          <title>Registros</title>
+        </head>
+        <body>
+          <h1>Registros</h1>
+          <h2>Archivo ${logFileName}</h2>
+          <pre>${logContentRegular}</pre>
+          <h2>Archivo ${logFileName}</h2>
+          <pre>${logContentAlert}</pre>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    const logContentRegular = await fs.readFile(logFilePathRegular, 'utf-8');
+    res.send(`
+      <html>
+        <head>
+          <title>Registros</title>
+        </head>
+        <body>
+          <h1>Registros</h1>
+          <pre>${logContentRegular}</pre>
+        </body>
+      </html>
+    `);
+  }
+});
+
+app.listen(3000, () => {
+  console.log('El servidor está funcionando en el puerto 3000');
+});
 
     app.get('/add-time', (req, res) => {
       const timeForm = `
