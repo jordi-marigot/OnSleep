@@ -20,6 +20,9 @@ app.use('/days-data', express.static(jsonFilesPath));
 let clientIpAddress = '';
 let currentLogFile = '';
 let dropdownOptions = []; // Variable global para almacenar las opciones del menú desplegable
+let timer;
+
+clientIpAddress = obtenerIPGuardada();
 
 // Función para guardar la IP en un archivo JSON
 async function guardarIP(ipAddress) {
@@ -38,6 +41,7 @@ async function obtenerIPGuardada() {
     const data = await fs.readFile('ipAddress.json', 'utf-8');
     const parsedData = JSON.parse(data);
     if (parsedData.ipAddress) {
+      console.log("IP del cliente precargada:", parsedData.ipAddress)
       return parsedData.ipAddress;
     }
   } catch (error) {
@@ -46,17 +50,31 @@ async function obtenerIPGuardada() {
   return null;
 }
 
+function checkClientStatus(clientIpAddress) {
+  ping.sys.probe(clientIpAddress, (isAlive) => {
+    if (isAlive) {
+      logRegister("alert-")
+      console.log(`El cliente en la IP ${clientIpAddress} está encendido.`);
+    } else {
+      console.log(`El cliente en la IP ${clientIpAddress} no responde.`);
+    }
+  });
+  setTimeout(() => {
+    checkClientStatus(clientIpAddress);
+  }, 2 * 60 * 1000);
+}
+
+
 async function logRegister(stringMessage){
   const currentTimeOnline = await getOnlineTime();
   console.log('Señal de vida recibida del cliente en', currentTimeOnline);
   const currentDate = moment().tz('Europe/Madrid').format('YYYY-MM-DD');
-  const alertString = `${stringMessage}`;
 
   if (currentDate !== currentLogFile) {
     currentLogFile = currentDate;
   }
 
-  const logFileName = `${alertString}${currentLogFile}.log`;
+  const logFileName = `${stringMessage}${currentLogFile}.log`;
 
   const formattedTime = moment(currentTimeOnline)
     .tz('Europe/Madrid')
@@ -70,8 +88,7 @@ async function logRegister(stringMessage){
 }
 
 app.get('/get-ip', (req, res) => {
-  const savedIpAddress = obtenerIPGuardada();
-  res.json({ ipAddress: savedIpAddress });
+  res.json({ ipAddress: clientIpAddress });
 });
 
 app.post('/set-ip', (req, res) => {
@@ -107,27 +124,10 @@ async function prependToFile(fileName, data) {
 
     const newContent = data + currentContent;
     await fs.writeFile(filePath, newContent, { flag: 'w' }); // Usamos { flag: 'w' } para crear o sobrescribir el archivo
-    console.log('Entrada agregada al principio del archivo:', data);
+    console.log('Entrada agregada al principio del archivo:', data, " en: ", fileName);
   } catch (error) {
     console.error('Error al agregar entrada al archivo:', error.message);
   }
-}
-
-// Añadir async a la función readFile
-async function readFile(fileName) {
-  try {
-    const data = await fs.readFile(fileName, 'utf8');
-    return data;
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return '';
-    }
-    throw error;
-  }
-}
-
-async function writeFile(fileName, data) {
-  await fs.writeFile(fileName, data);
 }
 
 async function getLogFilesList() {
@@ -167,10 +167,31 @@ async function generateDailyJson() {
 generateDailyJson();
 
 app.post('/heartbeat', async (req, res) => {
-  logRegister("regular-");
-
   res.sendStatus(200);
+  heartbeatFalse(clientIpAddress,false);
 });
+
+function heartbeatFalse(ipClient, condition) {
+  if (condition === true) {
+    checkClientStatus(ipClient);
+    return;
+  }
+  else{
+    logRegister("regular-");
+  }
+
+  // Configura un temporizador para esperar 1 minuto y medio (90,000 ms).
+  const tiempoDeEspera = 90 * 1000;
+
+  const timeoutId = setTimeout(() => {
+    console.log('-- La función no se llamó con `true` en 1 minuto y medio.');
+  }, tiempoDeEspera);
+}
+
+// Llama a la función con `true` después de 1 minuto y medio.
+setTimeout(() => {
+  checkClientStatus(clientIpAddress, true);
+}, 2 * 60 * 1000);
 
 app.get('/get-json/:fileName', async (req, res) => {
   try {
@@ -217,17 +238,6 @@ app.get('/logs', async (req, res) => {
     res.send(mainPage);
     });
 
-// Función para realizar el ping y verificar la respuesta
-function pingClient() {
-  ping.sys.probe(clientIpAddress, (isAlive) => {
-    if (isAlive) {
-      console.log('La aplicación del cliente se ha cerrado, pero el PC sigue funcionando.');
-      logRegister("alert-")
-    } else {
-      console.log('El cliente no está activo.');
-    }
-  });
-}
 
 /*const pingInterval = 2 * 60 * 1000; // 2 minutos en milisegundos
 let lastPingTime = Date.now();
@@ -249,7 +259,8 @@ app.get('/logs/:logFileName', async (req, res) => {
   const logFilePathRegular = `${__dirname}/logs/${logFileName}`;
   let logFilePathAlert = `${__dirname}/logs/alert-${logFileName}`;
   logFilePathAlert = logFilePathRegular.replace('regular-', 'alert-');
-  
+  const logFileNameAlert = logFilePathAlert.replace('/server/logs/', '')
+
   try {
     const logContentRegular = await fs.readFile(logFilePathRegular, 'utf-8');
     const logContentAlert = await fs.readFile(logFilePathAlert, 'utf-8');
@@ -263,7 +274,7 @@ app.get('/logs/:logFileName', async (req, res) => {
           <h1>Registros</h1>
           <h2>Archivo ${logFileName}</h2>
           <pre>${logContentRegular}</pre>
-          <h2>Archivo ${logFileName}</h2>
+          <h2>Archivo ${logFileNameAlert}</h2>
           <pre>${logContentAlert}</pre>
         </body>
       </html>
