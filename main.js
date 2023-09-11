@@ -34,26 +34,34 @@ const serverUrl = "http://10.43.132.120:2222"; // URL del servidor
 
 let ipAddress = '';
 
-// Encuentra la dirección IP local de la máquina
 for (const iface of interfaces) {
   const networkInterface = networkInterfaces[iface];
   for (const networkInfo of networkInterface) {
-    if (networkInfo.family === 'IPv4' && !networkInfo.internal) {
+    if (
+      networkInfo.family === 'IPv4' &&
+      !networkInfo.internal &&
+      networkInfo.address.startsWith('10.43.132.')
+    ) {
       ipAddress = networkInfo.address;
       break;
     }
   }
 }
 
-// Envía la dirección IP local al servidor
-axios
-  .post(`${serverUrl}/set-ip`, { ipAddress })
-  .then((response) => {
-    console.log('IP privada enviada al servidor Linux');
-  })
-  .catch((error) => {
-    console.error('Error al enviar la IP privada al servidor Linux:', error);
-  });
+if (!ipAddress) {
+  console.error('No se encontró una dirección IP en el rango deseado (10.43.132.*).');
+  // Puedes manejar el caso en el que no se encuentra una IP en el rango deseado aquí.
+} else {
+  // Envía la dirección IP local al servidor
+  axios
+    .post(`${serverUrl}/set-ip`, { ipAddress })
+    .then((response) => {
+      console.log('IP privada enviada al servidor Linux');
+    })
+    .catch((error) => {
+      console.error('Error al enviar la IP privada al servidor Linux:', error);
+    });
+}
 
   // Configurar un temporizador para enviar señales de vida cada 1 minuto.
   setInterval(() => {
