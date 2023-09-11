@@ -209,9 +209,13 @@ app.get('/get-json/:fileName', async (req, res) => {
 
 app.get('/logs', async (req, res) => {
   const logFiles = await getLogFilesList();
-  dropdownOptions = logFiles.map((logFile) => {
-    return `<option value="${logFile}">${logFile}</option>`;
-  });
+  dropdownOptions = logFiles
+    .filter((logFile) => logFile.startsWith('regular-'))
+    .map((logFile) => {
+      // Elimina "regular-" y ".log" del nombre del archivo
+      const date = logFile.replace('regular-', '').replace('.log', '');
+      return `<option value="${logFile}">${date}</option>`;
+    });
 
   const mainPage = `
         <html>
@@ -220,7 +224,7 @@ app.get('/logs', async (req, res) => {
         </head>
         <body>
             <h1>Archivos de Registro</h1>
-            <label for="logSelect">Seleccionar un archivo de registro:</label>
+            <label for="logSelect">Seleccionar una fecha de registro:</label>
             <select id="logSelect">
             ${dropdownOptions.join('\n')}
             </select>
@@ -235,23 +239,8 @@ app.get('/logs', async (req, res) => {
         </html>
     `;
 
-    res.send(mainPage);
-    });
-
-
-/*const pingInterval = 2 * 60 * 1000; // 2 minutos en milisegundos
-let lastPingTime = Date.now();
-
-// Establecer un intervalo para realizar el ping
-setInterval(() => {
-  const currentTime = Date.now();
-  const elapsedTime = currentTime - lastPingTime;
-
-  if (elapsedTime >= pingInterval) {
-    pingClient();
-    lastPingTime = currentTime;
-  }
-}, 10000); // Verificar cada 10 segundos*/
+  res.send(mainPage);
+});
 
 
 app.get('/logs/:logFileName', async (req, res) => {
