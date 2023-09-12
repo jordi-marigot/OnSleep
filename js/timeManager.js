@@ -7,9 +7,6 @@ ipcRenderer.invoke('getJsonFromServer')
     // Procesa los datos recibidos
     const { initialTimeH, initialTimeM, finalTimeH, finalTimeM, extraTime } = result;
 
-    // Ahora puedes utilizar los datos en timeManager.js
-    console.log('Datos del JSON:', initialTimeH, initialTimeM, finalTimeH, finalTimeM, extraTime);
-
     var initialDateTime = new Date();
     var finalDateTime = new Date();
     // Asigna valores a 
@@ -25,7 +22,6 @@ ipcRenderer.invoke('getJsonFromServer')
       .then(data => {
         // Obtiene la fecha y hora en un solo objeto Date
         const actualDateTime = new Date(data.datetime);
-        console.log("Fecha y hora actual:", actualDateTime);
 
         // Calcula la diferencia entre actualDateTime y finalDateTime
         const diferencia = new Date(finalDateTime - actualDateTime);
@@ -44,16 +40,16 @@ ipcRenderer.invoke('getJsonFromServer')
         const totalHours = restHours + Math.floor(totalMinutes / 60);
         const remainingMinutes = totalMinutes % 60;
 
-        //runCountdown(totalHours, remainingMinutes, remainingSeconds);
+        const initialTimeinMinutes = initialTimeH * 60 + initialTimeM;
+        const finalTimeinMinutes = finalTimeH * 60 + finalTimeM;
+        const actualTimeinMinutes = actualDateTime.getUTCHours * 60 + actualDateTime.getUTCMinutes ;
 
         if (
-          (diferencia.getUTCHours >= initialTimeH && diferencia.getUTCHours <= totalHours) &&
-          (diferencia.getUTCMinutes >= initialTimeM && diferencia.getUTCMinutes <= remainingMinutes)
+          (initialDateTime <= actualDateTime && finalDateTime >= actualDateTime)
         ) {
           runCountdown(totalHours, remainingMinutes, remainingSeconds);
         } else {
-          runCountdown(totalHours, remainingMinutes, remainingSeconds);
-          console.log("bombaaaa entre 23-6h")
+          runCountdown(0, 0, 10);
         }
       })
       .catch(error => {

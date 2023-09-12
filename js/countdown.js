@@ -19,19 +19,7 @@ function runCountdown(h, m, s){
         autoStart: true,
         callbacks: {
             interval: function(){
-            /*if (clock.getTime() == 0){
-                if (pos == "session"){
-                clock.setTime(countB*60); // Restablece el tiempo a la duración de la pausa
-                clock.start();
-                pos = "break";
-                $("#stats").html(pos);
-                } else if (pos == "break"){
-                clock.setTime(countS*60); // Restablece el tiempo a la duración de la sesión
-                clock.start();
-                pos = "session";
-                $("#stats").html(pos);
-                }
-            }*/
+                
                 // Obtén el tiempo restante en segundos
                 var remainingSeconds = clock.getTime();
                 var root = document.documentElement;
