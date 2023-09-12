@@ -83,7 +83,7 @@ let jsonData;
 let jsonFileName;
 
 // Función para obtener el JSON del servidor y mostrarlo
-async function obtenerYMostrarJSON() {
+async function getAndShowJson() {
   try {
     // Obtén el nombre del archivo JSON
     jsonFileName = getJsonFileName();
@@ -96,7 +96,18 @@ async function obtenerYMostrarJSON() {
 
     // Realiza una solicitud al servidor para obtener el JSON
     const response = await axios.get(`${serverUrl}/days-data/${jsonFileName}`);
-    jsonData = response.data; // Asigna el JSON a la variable jsonData
+
+    if(typeof jsonData === "undefined" || jsonData === null){
+      jsonData = response.data;
+    }
+    else{
+      jsonDataOld = jsonData;
+      jsonData = response.data;
+      if(!equalJson(jsonDataOld, jsonData)){
+        console.log("Update window | diferent json");
+        mainWindow.reload();
+      }
+    }
 
     console.log("JSON recibido del servidor:", jsonData);
   } catch (error) {
@@ -105,8 +116,33 @@ async function obtenerYMostrarJSON() {
 }
 
 // Llama a la función inicialmente y luego cada 1 minuto (60,000 milisegundos)
-obtenerYMostrarJSON(); // Llamada inicial
-setInterval(obtenerYMostrarJSON, 60000); // Llamada cada 1 minuto
+getAndShowJson(); // Llamada inicial
+setInterval(getAndShowJson, 60000); // Llamada cada 1 minuto
+
+function equalJson(json1, json2) {
+
+  if(json1.length > 0){
+    return true;
+  }
+
+
+  // Comprobamos si ambos objetos tienen las mismas propiedades
+  const props1 = Object.keys(json1);
+  const props2 = Object.keys(json2);
+
+  if (props1.length !== props2.length) {
+    return false;
+  }
+
+  // Comparamos los valores de las propiedades
+  for (let prop of props1) {
+    if (json1[prop] !== json2[prop]) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 // Función para generar el nombre del archivo JSON basado en la fecha actual
 function getJsonFileName() {
@@ -114,7 +150,6 @@ function getJsonFileName() {
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
-  console.log("Generando nombre del archivo JSON...");
   return `regular-${year}-${month}-${day}.json`;
 }
 
