@@ -838,7 +838,18 @@ text-decoration: none;
 footer a:hover {
 color: #FFC39E;
 }
-</style>`
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const continueButton = document.querySelector(".button-box");
+  continueButton.addEventListener("click", () => {
+      // Vuelve a la página anterior
+      window.history.back();
+  });
+});
+</script>
+`
+
 const successPopupHTML = css+`
           <div id="container">
               <div id="success-box">
